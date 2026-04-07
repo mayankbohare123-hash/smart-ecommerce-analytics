@@ -1,0 +1,55 @@
+version: "3.9"
+
+# ── Smart E-Commerce Analytics Platform ──────────────────────────────────────
+# Runs the full stack locally with one command:
+#   docker-compose up --build
+#
+# Services:
+#   backend  → FastAPI on http://localhost:8000  (Swagger: /docs)
+#   frontend → React + Vite on http://localhost:5173
+
+services:
+
+  # ── Backend (FastAPI) ───────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: salesiq-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount uploads folder so files persist across container restarts
+      - ./backend/uploads:/app/uploads
+      # Mount ML models so trained models persist
+      - ./backend/app/ml/models:/app/app/ml/models
+      # Mount .env for local secrets (copy .env.example → .env first)
+      - ./backend/.env:/app/.env:ro
+    environment:
+      - APP_ENV=development
+      - DATABASE_URL=sqlite:///./ecommerce.db
+      - UPLOAD_DIR=uploads
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ── Frontend (React + Vite) ─────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: salesiq-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  default:
+    name: salesiq-network
