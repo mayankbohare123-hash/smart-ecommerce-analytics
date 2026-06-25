@@ -1,17 +1,4 @@
-/**
- * DataContext.jsx
- * ───────────────
- * Global state provider. Stores:
- *   - selectedFileId: the currently active upload
- *   - files: list of all uploaded files
- *   - analytics: cached analytics for the selected file
- *   - charts: cached visualization data
- *   - loading/error states per section
- *
- * Components read from context instead of each making their own API calls,
- * which prevents redundant requests when switching pages.
- */
-import React, { createContext, useContext, useState, useCallback } from 'react'
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { listFiles, getAnalytics, getAllCharts } from '../services/analyticsApi'
 
 const DataContext = createContext(null)
@@ -21,31 +8,15 @@ export function DataProvider({ children }) {
   const [files,    setFiles]    = useState([])
   const [analytics,setAnalytics]= useState(null)
   const [charts,   setCharts]   = useState(null)
-  const [loadingFiles,    setLoadingFiles]    = useState(false)
-  const [loadingAnalytics,setLoadingAnalytics]= useState(false)
+  const [loadingFiles,     setLoadingFiles]     = useState(false)
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false)
   const [error, setError] = useState(null)
 
-  // ── Fetch file list ────────────────────────────────────────────────────────
-  const refreshFiles = useCallback(async () => {
-    setLoadingFiles(true)
-    setError(null)
-    try {
-      const data = await listFiles()
-      setFiles(data)
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setLoadingFiles(false)
-    }
-  }, [])
-
-  // ── Select a file and load its analytics + charts ─────────────────────────
-  const selectFile = useCallback(async (fileId) => {
-    if (fileId === selectedFileId) return
-    setSelectedFileId(fileId)
+  const loadAnalytics = useCallback(async (fileId) => {
+    if (!fileId) return
+    setLoadingAnalytics(true)
     setAnalytics(null)
     setCharts(null)
-    setLoadingAnalytics(true)
     setError(null)
     try {
       const [analyticsData, chartsData] = await Promise.all([
@@ -59,7 +30,34 @@ export function DataProvider({ children }) {
     } finally {
       setLoadingAnalytics(false)
     }
-  }, [selectedFileId])
+  }, [])
+
+  const refreshFiles = useCallback(async () => {
+    setLoadingFiles(true)
+    setError(null)
+    try {
+      const data = await listFiles()
+      setFiles(data)
+      if (data.length > 0) {
+        const firstId = data[0].id
+        setSelectedFileId(firstId)
+        await loadAnalytics(firstId)
+      }
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoadingFiles(false)
+    }
+  }, [loadAnalytics])
+
+  const selectFile = useCallback(async (fileId) => {
+    setSelectedFileId(fileId)
+    await loadAnalytics(fileId)
+  }, [loadAnalytics])
+
+  useEffect(() => {
+    refreshFiles()
+  }, [])
 
   const clearError = () => setError(null)
 
@@ -68,8 +66,7 @@ export function DataProvider({ children }) {
       selectedFileId, setSelectedFileId,
       files, refreshFiles, loadingFiles,
       analytics, charts, loadingAnalytics,
-      error, clearError,
-      selectFile,
+      error, clearError, selectFile,
     }}>
       {children}
     </DataContext.Provider>

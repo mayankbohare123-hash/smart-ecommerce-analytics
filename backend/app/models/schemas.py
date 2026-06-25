@@ -99,13 +99,22 @@ class AnalyticsResponse(BaseModel):
 # ── Visualization schemas ─────────────────────────────────────────────────────
 
 class ChartDataset(BaseModel):
-    """A single dataset in a Chart.js chart."""
+    """
+    A single dataset in a Chart.js chart.
+
+    NOTE: backgroundColor / borderColor accept EITHER a single color string
+    (e.g. "#6366f1") OR a list of color strings (e.g. ["#4f46e5", "#5b52e8", ...]).
+    Chart.js supports both forms natively — a single string colors every bar/slice
+    the same, while a list lets each bar/slice have its own color (used by the
+    Top Products bar chart and the Category doughnut chart). `Any` is used here
+    instead of `str` so Pydantic doesn't reject the list form.
+    """
     label: str
-    data: List[float]
-    backgroundColor: Optional[Any] = None   # string or list
-    borderColor: Optional[str] = None
+    data: List[Any]
+    backgroundColor: Optional[Any] = None   # string OR list of strings
+    borderColor: Optional[Any] = None       # string OR list of strings
     borderWidth: Optional[int] = 2
-    fill: Optional[bool] = False
+    fill: Optional[Any] = False             # bool OR string (Chart.js supports fill: '+1')
     tension: Optional[float] = 0.4          # line chart curve
 
 

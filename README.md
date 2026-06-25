@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # SalesIQ — Smart E-Commerce Analytics Platform
 
 > Upload CSV sales data → get instant analytics, interactive charts, and ML-powered 30-day revenue forecasts.
@@ -283,3 +284,6 @@ MIT — free to use, modify, and distribute.
 ---
 
 *Built with FastAPI, React, Pandas, and Scikit-learn.*
+=======
+# -smart-ecommerce-analytics
+>>>>>>> 044b9786676e4f8ad11311368e81071078ca2ecd
