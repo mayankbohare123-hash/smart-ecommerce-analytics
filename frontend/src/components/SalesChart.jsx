@@ -3,6 +3,9 @@
  * ──────────────
  * Monthly revenue trend — dual Y-axis line chart.
  * Left axis: revenue ($), Right axis: order count.
+ *
+ * EASY CHANGE #4: Revenue line color updated from indigo (#6366f1)
+ * to sky blue (#0ea5e9) to match the new global accent color.
  */
 import {
   Chart as ChartJS,
@@ -72,7 +75,8 @@ export default function SalesChart({ data, loading }) {
     },
   }
 
-  // Assign second dataset to y1 axis
+  // Assign second dataset to y1 axis, and recolor the revenue line
+  // to match the new accent color (was #6366f1, now #0ea5e9)
   const chartData = {
     ...data,
     datasets: data.datasets.map((ds, i) => ({
@@ -80,6 +84,9 @@ export default function SalesChart({ data, loading }) {
       yAxisID: i === 1 ? 'y1' : 'y',
       pointRadius: 3,
       pointHoverRadius: 6,
+      ...(i === 0
+        ? { borderColor: '#0ea5e9', backgroundColor: 'rgba(14,165,233,0.08)' }
+        : {}),
     })),
   }
 

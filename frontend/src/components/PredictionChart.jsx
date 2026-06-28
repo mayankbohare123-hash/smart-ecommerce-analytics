@@ -3,12 +3,27 @@
  * ────────────────────
  * Combined historical + forecast line chart with confidence band.
  * Shows a vertical separator between history and forecast regions.
+ *
+ * FIX (easy-change #1): Y-axis labels used to show duplicates like
+ * "$5k  $5k" because values like 4,500 and 5,000 both rounded to the
+ * same 0-decimal "k" label. Switched to Intl.NumberFormat's built-in
+ * "compact" notation with 1 decimal place, so 4,500 → "$4.5K" and
+ * 5,000 → "$5K" — no more duplicate ticks.
  */
 import { Line } from 'react-chartjs-2'
 
 const FONT = "'DM Sans', sans-serif"
 const GRID = 'rgba(255,255,255,0.05)'
 const TICK = '#4a5568'
+
+// Compact currency formatter — avoids duplicate rounded labels
+const compactCurrency = (v) =>
+  new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(v)
 
 export default function PredictionChart({ data, loading }) {
   if (loading) return <div className="skeleton w-full h-72 rounded-xl" />
@@ -102,7 +117,7 @@ export default function PredictionChart({ data, loading }) {
         ticks: {
           color: TICK,
           font: { family: FONT, size: 11 },
-          callback: (v) => `$${(v / 1000).toFixed(0)}k`,
+          callback: compactCurrency,   // ← FIXED: was (v) => `$${(v/1000).toFixed(0)}k`
         },
       },
     },

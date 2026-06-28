@@ -5,15 +5,35 @@
  *   - Logo / brand mark
  *   - File selector (active upload)
  *   - Nav links with icons
- *   - Mini stats footer
+ *   - Mini stats footer + author credit
+ *
+ * EASY CHANGE #2: Brand name is now a single editable constant (BRAND)
+ * at the top of this file — change it once, updates everywhere.
+ *
+ * EASY CHANGE #5: Added a "Built by ___" credit line with your GitHub
+ * link in the sidebar footer. Edit the AUTHOR constant below.
  */
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Upload, BarChart3, TrendingUp,
-  ChevronDown, Database, Circle, Zap
+  ChevronDown, Database, Circle, Zap, Github
 } from 'lucide-react'
 import { useData } from '../context/DataContext'
 import { useState } from 'react'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ✏️  EDIT THESE TWO CONSTANTS TO MAKE THE APP YOUR OWN
+// ─────────────────────────────────────────────────────────────────────────────
+const BRAND = {
+  name: 'SalesIQ',                  // ← change to your own product name
+  tagline: 'Analytics Platform',    // ← change to your own tagline
+}
+
+const AUTHOR = {
+  name: 'Mayank Bohare',                                  // ← change to your name
+  githubUrl: 'https://github.com/mayankbohare123-hash',    // ← change to your GitHub URL
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 const NAV = [
   { to: '/',            icon: LayoutDashboard, label: 'Dashboard' },
@@ -48,9 +68,9 @@ export default function Sidebar() {
         </div>
         <div>
           <div className="text-sm font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-            SalesIQ
+            {BRAND.name}
           </div>
-          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Analytics Platform</div>
+          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{BRAND.tagline}</div>
         </div>
       </div>
 
@@ -126,7 +146,7 @@ export default function Sidebar() {
       </nav>
 
       {/* ── Footer ────────────────────────────────────────────── */}
-      <div className="px-4 py-4 border-t" style={{ borderColor: 'var(--border)' }}>
+      <div className="px-4 py-3 border-t space-y-2.5" style={{ borderColor: 'var(--border)' }}>
         <div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
           <span>{files.length} dataset{files.length !== 1 ? 's' : ''}</span>
           <span className="flex items-center gap-1">
@@ -134,6 +154,18 @@ export default function Sidebar() {
             API online
           </span>
         </div>
+
+        {/* Author credit — EASY CHANGE #5 */}
+        <a
+          href={AUTHOR.githubUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 text-xs transition-colors hover:underline"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          <Github size={12} />
+          Built by {AUTHOR.name}
+        </a>
       </div>
     </aside>
   )

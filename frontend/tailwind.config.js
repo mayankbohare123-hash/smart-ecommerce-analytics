@@ -1,4 +1,11 @@
 /** @type {import('tailwindcss').Config} */
+
+/**
+ * EASY CHANGE #4: Accent color switched from Indigo (#6366f1) to
+ * Sky Blue / Cyan (#0ea5e9) for a fresher, more distinctive look.
+ * To pick a different color yourself, just edit the 3 hex values
+ * in `colors.accent` below — everything else updates automatically.
+ */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
@@ -16,9 +23,9 @@ export default {
           600: '#1e2d52',
         },
         accent: {
-          DEFAULT: '#6366f1',
-          hover:   '#4f46e5',
-          muted:   'rgba(99,102,241,0.15)',
+          DEFAULT: '#0ea5e9',   // ← was #6366f1 (indigo) → now sky blue
+          hover:   '#0284c7',   // ← was #4f46e5
+          muted:   'rgba(14,165,233,0.15)',  // ← was rgba(99,102,241,0.15)
         },
         success: '#22c55e',
         warning: '#f59e0b',
