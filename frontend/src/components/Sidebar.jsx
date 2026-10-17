@@ -1,50 +1,51 @@
 /**
- * Sidebar.jsx
- * ───────────
- * Left navigation sidebar with:
- *   - Logo / brand mark
- *   - File selector (active upload)
- *   - Nav links with icons
- *   - Mini stats footer + author credit
+ * Sidebar.jsx — UPDATED with user info + logout button.
  *
- * EASY CHANGE #2: Brand name is now a single editable constant (BRAND)
- * at the top of this file — change it once, updates everywhere.
- *
- * EASY CHANGE #5: Added a "Built by ___" credit line with your GitHub
- * link in the sidebar footer. Edit the AUTHOR constant below.
+ * New additions:
+ *  - Shows logged-in user's name and plan badge at the bottom
+ *  - Logout button that calls AuthContext.logout()
+ *  - Plan badge: FREE (gray) / STARTER (blue) / PRO (gold)
  */
+
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Upload, BarChart3, TrendingUp,
-  ChevronDown, Database, Circle, Zap, Github
+  ChevronDown, Database, Circle, Zap, Github, LogOut,
+  Crown, User,
 } from 'lucide-react'
-import { useData } from '../context/DataContext'
+import { useData }  from '../context/DataContext'
+import { useAuth }  from '../context/AuthContext'
 import { useState } from 'react'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ✏️  EDIT THESE TWO CONSTANTS TO MAKE THE APP YOUR OWN
-// ─────────────────────────────────────────────────────────────────────────────
 const BRAND = {
-  name: 'SalesIQ',                  // ← change to your own product name
-  tagline: 'Analytics Platform',    // ← change to your own tagline
+  name:    'SalesIQ',
+  tagline: 'Analytics Platform',
 }
 
 const AUTHOR = {
-  name: 'Mayank Bohare',                                  // ← change to your name
-  githubUrl: 'https://github.com/mayankbohare123-hash',    // ← change to your GitHub URL
+  name:      'Mayank Bohare',
+  githubUrl: 'https://github.com/mayankbohare123-hash',
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
 const NAV = [
-  { to: '/',            icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/',            icon: LayoutDashboard, label: 'Dashboard'   },
   { to: '/upload',      icon: Upload,          label: 'Upload Data' },
-  { to: '/analytics',   icon: BarChart3,        label: 'Analytics' },
-  { to: '/predictions', icon: TrendingUp,       label: 'Predictions' },
+  { to: '/analytics',   icon: BarChart3,        label: 'Analytics'  },
+  { to: '/predictions', icon: TrendingUp,       label: 'Predictions'},
 ]
+
+// Plan badge styles
+const PLAN_BADGE = {
+  free:    { label: 'FREE',    bg: 'rgba(255,255,255,0.06)', color: '#6b7280' },
+  starter: { label: 'STARTER', bg: 'rgba(99,102,241,0.15)', color: '#818cf8' },
+  pro:     { label: 'PRO',     bg: 'rgba(245,158,11,0.15)', color: '#fbbf24' },
+}
 
 export default function Sidebar() {
   const { files, selectedFileId, selectFile } = useData()
-  const [fileOpen, setFileOpen] = useState(false)
+  const { user, logout }                       = useAuth()
+  const [fileOpen,    setFileOpen]    = useState(false)
+  const [loggingOut,  setLoggingOut]  = useState(false)
   const navigate = useNavigate()
 
   const activeFile = files.find(f => f.id === selectedFileId)
@@ -54,6 +55,15 @@ export default function Sidebar() {
     setFileOpen(false)
     navigate('/')
   }
+
+  const handleLogout = async () => {
+    setLoggingOut(true)
+    await logout()
+    navigate('/login', { replace: true })
+  }
+
+  const plan  = user?.plan || 'free'
+  const badge = PLAN_BADGE[plan] || PLAN_BADGE.free
 
   return (
     <aside className="flex flex-col w-60 min-h-screen border-r shrink-0"
@@ -84,8 +94,7 @@ export default function Sidebar() {
             background: 'var(--bg-elevated)',
             border: '1px solid var(--border)',
             color: activeFile ? 'var(--text-primary)' : 'var(--text-muted)',
-          }}
-        >
+          }}>
           <span className="flex items-center gap-2 truncate">
             <Database size={13} />
             <span className="truncate">
@@ -95,7 +104,6 @@ export default function Sidebar() {
           <ChevronDown size={13} className={`shrink-0 transition-transform ${fileOpen ? 'rotate-180' : ''}`} />
         </button>
 
-        {/* Dropdown */}
         {fileOpen && files.length > 0 && (
           <div className="mt-1 rounded-lg overflow-hidden shadow-xl"
             style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
@@ -104,9 +112,9 @@ export default function Sidebar() {
                 key={file.id}
                 onClick={() => handleFileSelect(file)}
                 className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors hover:bg-white/5"
-                style={{ color: file.id === selectedFileId ? '#818cf8' : 'var(--text-secondary)' }}
-              >
-                <Circle size={6} fill={file.id === selectedFileId ? '#6366f1' : 'transparent'}
+                style={{ color: file.id === selectedFileId ? '#818cf8' : 'var(--text-secondary)' }}>
+                <Circle size={6}
+                  fill={file.id === selectedFileId ? '#6366f1' : 'transparent'}
                   stroke={file.id === selectedFileId ? '#6366f1' : 'currentColor'} />
                 <span className="truncate">{file.original_name}</span>
               </button>
@@ -137,36 +145,56 @@ export default function Sidebar() {
             }
             style={({ isActive }) => ({
               color: isActive ? '#818cf8' : 'var(--text-secondary)',
-            })}
-          >
+            })}>
             <Icon size={16} />
             {label}
           </NavLink>
         ))}
       </nav>
 
-      {/* ── Footer ────────────────────────────────────────────── */}
-      <div className="px-4 py-3 border-t space-y-2.5" style={{ borderColor: 'var(--border)' }}>
-        <div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
-          <span>{files.length} dataset{files.length !== 1 ? 's' : ''}</span>
-          <span className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse-slow inline-block" />
-            API online
-          </span>
-        </div>
+      {/* ── User info + Logout (NEW) ───────────────────────────── */}
+      {user && (
+        <div className="px-3 py-3 border-t" style={{ borderColor: 'var(--border)' }}>
+          <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg mb-1"
+            style={{ background: 'var(--bg-elevated)' }}>
+            <div className="flex items-center justify-center w-7 h-7 rounded-full shrink-0"
+              style={{ background: 'var(--accent-muted)' }}>
+              <User size={13} style={{ color: 'var(--accent)' }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                {user.name || user.email}
+              </p>
+              <span className="inline-block text-xs font-semibold px-1.5 py-0.5 rounded mt-0.5"
+                style={{ background: badge.bg, color: badge.color, fontSize: '9px', letterSpacing: '0.05em' }}>
+                {badge.label}
+                {plan === 'pro' && <Crown size={8} className="inline ml-0.5 mb-0.5" />}
+              </span>
+            </div>
+            <button
+              onClick={handleLogout}
+              disabled={loggingOut}
+              title="Log out"
+              className="shrink-0 p-1.5 rounded-md transition-colors hover:bg-white/10 disabled:opacity-50"
+              style={{ color: 'var(--text-muted)' }}>
+              <LogOut size={14} />
+            </button>
+          </div>
 
-        {/* Author credit — EASY CHANGE #5 */}
-        <a
-          href={AUTHOR.githubUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-xs transition-colors hover:underline"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <Github size={12} />
-          Built by {AUTHOR.name}
-        </a>
-      </div>
+          {/* Dataset count + GitHub */}
+          <div className="flex items-center justify-between px-1 mt-1">
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              {files.length} dataset{files.length !== 1 ? 's' : ''}
+            </span>
+            <a href={AUTHOR.githubUrl} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1 text-xs hover:underline"
+              style={{ color: 'var(--text-muted)' }}>
+              <Github size={11} />
+              {AUTHOR.name}
+            </a>
+          </div>
+        </div>
+      )}
     </aside>
   )
 }
