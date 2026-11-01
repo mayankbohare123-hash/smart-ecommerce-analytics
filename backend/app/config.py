@@ -32,6 +32,28 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60)    # 1 hour
     REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7)       # 7 days
 
+    # ── Stripe billing (Step 2) ───────────────────────────────
+    # Leave blank to run the app without billing — checkout endpoints then
+    # return a clear "not configured" error instead of crashing.
+    STRIPE_SECRET_KEY: str = Field(default="")
+    STRIPE_WEBHOOK_SECRET: str = Field(default="")
+    STRIPE_STARTER_PRICE_ID: str = Field(default="")
+    STRIPE_PRO_PRICE_ID: str = Field(default="")
+    # Where Stripe sends people back to after checkout / the billing portal
+    FRONTEND_URL: str = Field(default="http://localhost:5173")
+
+    # ── Password reset + email ────────────────────────────────
+    PASSWORD_RESET_EXPIRE_MINUTES: int = Field(default=60)
+    PASSWORD_RESET_MAX_PER_HOUR: int = Field(default=3)   # per account — stops email-bombing
+    # SMTP is optional. If SMTP_HOST is blank, emails are NOT sent; in development
+    # the message (including the reset link) is printed in the backend terminal.
+    SMTP_HOST: str = Field(default="")
+    SMTP_PORT: int = Field(default=587)
+    SMTP_USER: str = Field(default="")
+    SMTP_PASSWORD: str = Field(default="")
+    SMTP_STARTTLS: bool = Field(default=True)
+    EMAIL_FROM: str = Field(default="SalesIQ <no-reply@salesiq.local>")
+
     # ── File uploads ──────────────────────────────────────────
     UPLOAD_DIR: str = Field(default="uploads")
     MAX_FILE_SIZE_MB: int = Field(default=10)
@@ -72,6 +94,10 @@ class Settings(BaseSettings):
     @property
     def allowed_extensions_list(self) -> List[str]:
         return [e.strip().lower() for e in self.ALLOWED_EXTENSIONS.split(",")]
+
+    @property
+    def stripe_configured(self) -> bool:
+        return bool(self.STRIPE_SECRET_KEY and self.STRIPE_STARTER_PRICE_ID and self.STRIPE_PRO_PRICE_ID)
 
     @property
     def is_production(self) -> bool:

@@ -53,6 +53,7 @@ class PredictionService:
         file_id: int,
         analytics: AnalyticsService,
         force_retrain: bool = False,
+        user_id: Optional[int] = None,
     ) -> PredictionResponse:
         """
         Main entry point — returns a full PredictionResponse.
@@ -67,14 +68,14 @@ class PredictionService:
             return self._build_response_from_cache(file_id, cached, analytics)
 
         # ── Train fresh models ────────────────────────────────────────────────
-        return self._train_and_predict(file_id, analytics)
+        return self._train_and_predict(file_id, analytics, user_id=user_id)
 
     # ─────────────────────────────────────────────────────────────────────────
     # Private: train pipeline
     # ─────────────────────────────────────────────────────────────────────────
 
     def _train_and_predict(
-        self, file_id: int, analytics: AnalyticsService
+        self, file_id: int, analytics: AnalyticsService, user_id: Optional[int] = None
     ) -> PredictionResponse:
         """Run full train → predict pipeline and persist results."""
 
@@ -115,6 +116,7 @@ class PredictionService:
             metrics=metrics,
             predictions=predictions,
             model_path=train_result.model_path,
+            user_id=user_id,
         )
 
         # ── 6. Build response ─────────────────────────────────────────────────
@@ -151,6 +153,7 @@ class PredictionService:
         metrics,
         predictions: list,
         model_path: Path,
+        user_id: Optional[int] = None,
     ) -> None:
         """Persist model metrics and serialized predictions to the DB."""
         # Serialize predictions as JSON for storage
@@ -170,6 +173,7 @@ class PredictionService:
         ).delete()
 
         record = PredictionResult(
+            user_id=user_id,
             file_id=file_id,
             model_type=metrics.model_type,
             mae=metrics.mae,

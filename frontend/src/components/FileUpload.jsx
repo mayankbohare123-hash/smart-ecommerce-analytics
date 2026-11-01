@@ -9,6 +9,7 @@
  *   - Column mapping preview on success
  */
 import { useCallback, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useDropzone } from 'react-dropzone'
 import { Upload, File, CheckCircle, XCircle, Loader2, CloudUpload } from 'lucide-react'
 import { uploadFile } from '../services/analyticsApi'
@@ -189,7 +190,12 @@ export default function FileUpload({ onSuccess }) {
             <div>
               <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Upload failed</p>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{errMsg}</p>
-              <button onClick={reset} className="btn-ghost mt-3 text-xs py-1.5">Try again</button>
+              <div className="flex items-center gap-2 mt-3">
+                {/limit reached/i.test(errMsg) && (
+                  <Link to="/pricing" className="btn-primary text-xs py-1.5">See plans</Link>
+                )}
+                <button onClick={reset} className="btn-ghost text-xs py-1.5">Try again</button>
+              </div>
             </div>
           </div>
         </div>

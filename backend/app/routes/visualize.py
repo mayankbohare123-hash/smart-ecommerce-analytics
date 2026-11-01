@@ -39,3 +39,20 @@ def get_category(file_id: int, current_user: User = Depends(get_current_user), d
 @router.get("/visualize/{file_id}/regions", response_model=ChartData)
 def get_regions(file_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return _get_viz(file_id, current_user.id, db).region_bar_chart()
+
+
+@router.get("/visualize/{file_id}/weekly", response_model=ChartData)
+def get_weekly_trend(file_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """More granular weekly revenue trend. Good for zoom-in dashboard view."""
+    return _get_viz(file_id, current_user.id, db).weekly_trend_chart()
+
+
+@router.get("/visualize/{file_id}/units", response_model=ChartData)
+def get_units_chart(
+    file_id: int,
+    limit: int = Query(default=8, ge=1, le=20),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Top products ranked by units sold (vs. revenue)."""
+    return _get_viz(file_id, current_user.id, db).units_sold_chart(limit=limit)

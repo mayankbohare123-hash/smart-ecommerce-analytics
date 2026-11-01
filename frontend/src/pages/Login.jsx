@@ -31,8 +31,9 @@ export default function Login() {
 
     setLoading(true)
     try {
-      await login(email.trim(), password)
-      navigate(from, { replace: true })
+      const u = await login(email.trim(), password)
+      // The founder lands in the admin panel; customers in their dashboard.
+      navigate(from === '/' && u?.role === 'admin' ? '/admin' : from, { replace: true })
     } catch (err) {
       setError(err.response?.data?.detail || err.message || 'Login failed. Please try again.')
     } finally {
@@ -121,6 +122,12 @@ export default function Login() {
                   {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
+            </div>
+
+            <div className="flex justify-end -mt-1">
+              <Link to="/forgot-password" className="text-xs font-medium hover:underline" style={{ color: 'var(--accent)' }}>
+                Forgot password?
+              </Link>
             </div>
 
             {/* Submit */}

@@ -14,7 +14,8 @@ Password flow:
 import bcrypt
 import hashlib
 import base64
-from datetime import datetime, timedelta
+import time
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import Depends, HTTPException, status
@@ -51,14 +52,16 @@ def verify_password(plain: str, hashed_str: str) -> bool:
 # ── Token creation ────────────────────────────────────────────────────────────
 
 def create_access_token(user_id: int, email: str) -> str:
-    expire  = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {"sub": str(user_id), "email": email, "type": "access", "exp": expire}
+    now     = datetime.utcnow()
+    expire  = now + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    payload = {"sub": str(user_id), "email": email, "type": "access", "exp": expire, "iat": int(time.time())}
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 
 def create_refresh_token(user_id: int) -> str:
-    expire  = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    payload = {"sub": str(user_id), "type": "refresh", "exp": expire}
+    now     = datetime.utcnow()
+    expire  = now + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    payload = {"sub": str(user_id), "type": "refresh", "exp": expire, "iat": int(time.time())}
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 
@@ -75,7 +78,21 @@ def decode_token(token: str) -> dict:
         )
 
 
-# ── FastAPI dependency ────────────────────────────────────────────────────────
+def token_revoked_by_password_change(user: User, payload: dict) -> bool:
+    """
+    True if the token was issued BEFORE the user's last password change.
+    This is what makes "reset my password" actually log out a thief who already
+    has a session — JWTs are otherwise valid until they expire.
+    """
+    changed = getattr(user, "password_changed_at", None)
+    if not changed:
+        return False
+    # password_changed_at is naive UTC → interpret as UTC when comparing to the token's epoch seconds
+    changed_ts = int(changed.replace(tzinfo=timezone.utc).timestamp())
+    return int(payload.get("iat", 0)) < changed_ts
+
+
+# ── FastAPI dependencies ──────────────────────────────────────────────────────
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -105,4 +122,17 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found.",
         )
+    if token_revoked_by_password_change(user, payload):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Your password was changed. Please log in again.",
+        )
     return user
+
+
+def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    """Dependency for every /api/admin route. The frontend hides the panel from
+    customers, but THIS is what actually protects it."""
+    if (current_user.role or "user") != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required.")
+    return current_user

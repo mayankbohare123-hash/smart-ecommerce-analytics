@@ -116,11 +116,11 @@ class TestFeatureEngineering:
 
     def test_lag_1d_equals_previous_revenue(self, daily_series):
         df = build_features(daily_series).dropna()
-        # lag_1d[i] should equal revenue[i-1]
-        for idx in range(5, 10):
-            expected = daily_series.iloc[idx - 1]
-            actual   = df["lag_1d"].iloc[idx - 30]  # offset for NaN-dropped rows
-            assert abs(expected - actual) < 0.01
+        # lag_1d on day D must equal revenue on day D-1. Align by date, not by
+        # position, because dropna() removes the first rows (lags/rolling windows).
+        previous_day = daily_series.shift(1).reindex(df.index)
+        assert len(df) > 0
+        assert np.allclose(df["lag_1d"].to_numpy(), previous_day.to_numpy(), atol=0.01)
 
     def test_trend_is_monotonic(self, daily_series):
         df = build_features(daily_series)
@@ -137,12 +137,9 @@ class TestModelTraining:
 
     def test_trainer_completes_without_error(self, daily_series, tmp_path, monkeypatch):
         """ModelTrainer.train() should complete and return a TrainingResult."""
+        # model_dir_path is a read-only property derived from MODEL_DIR,
+        # so patch the field it is built from.
         monkeypatch.setattr("app.config.settings.MODEL_DIR", str(tmp_path))
-        monkeypatch.setattr("app.config.settings.model_dir_path",
-                            property(lambda self: tmp_path))
-
-        from app.config import settings
-        settings.__dict__["model_dir_path"] = tmp_path   # direct patch
 
         trainer = ModelTrainer(daily_series, file_id=999)
         result  = trainer.train()

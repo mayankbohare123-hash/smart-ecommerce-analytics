@@ -67,8 +67,8 @@ export function AuthProvider({ children }) {
     return userData
   }, [])
 
-  const signup = useCallback(async (name, email, password) => {
-    const res = await authApi.post('/auth/signup', { name, email, password })
+  const signup = useCallback(async (name, email, password, organization = '') => {
+    const res = await authApi.post('/auth/signup', { name, email, password, organization: organization || null })
     const { access_token, refresh_token, user: userData } = res.data
     storeTokens(access_token, refresh_token)
     setUser(userData)
@@ -86,8 +86,17 @@ export function AuthProvider({ children }) {
     setUser(null)
   }, [])
 
+  // Re-read the profile (plan, usage) — call after any billing change.
+  const refreshUser = useCallback(async () => {
+    const token = getStoredToken()
+    if (!token) return null
+    const res = await authApi.get('/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+    setUser(res.data.user)
+    return res.data.user
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ user, loading, isAuthenticated: !!user, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, isAuthenticated: !!user, isAdmin: user?.role === 'admin', login, signup, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

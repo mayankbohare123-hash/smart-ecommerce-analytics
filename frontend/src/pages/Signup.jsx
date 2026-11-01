@@ -6,12 +6,13 @@
 
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Zap, User, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react'
+import { Zap, User, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Building2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 export default function Signup() {
   const [name,     setName]     = useState('')
   const [email,    setEmail]    = useState('')
+  const [organization, setOrganization] = useState('')
   const [password, setPassword] = useState('')
   const [showPwd,  setShowPwd]  = useState(false)
   const [loading,  setLoading]  = useState(false)
@@ -33,7 +34,7 @@ export default function Signup() {
 
     setLoading(true)
     try {
-      await signup(name.trim(), email.trim(), password)
+      await signup(name.trim(), email.trim(), password, organization.trim())
       navigate('/', { replace: true })
     } catch (err) {
       setError(err.response?.data?.detail || err.message || 'Signup failed. Please try again.')
@@ -125,6 +126,26 @@ export default function Signup() {
                   className="input pl-9"
                   autoComplete="email"
                   required
+                />
+              </div>
+            </div>
+
+            {/* Organisation (optional) */}
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                Company / organisation <span style={{ color: 'var(--text-muted)' }}>(optional)</span>
+              </label>
+              <div className="relative">
+                <Building2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2"
+                  style={{ color: 'var(--text-muted)' }} />
+                <input
+                  type="text"
+                  value={organization}
+                  onChange={e => setOrganization(e.target.value)}
+                  placeholder="Acme Traders"
+                  className="input pl-9"
+                  autoComplete="organization"
+                  maxLength={255}
                 />
               </div>
             </div>

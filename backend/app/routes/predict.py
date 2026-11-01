@@ -46,3 +46,14 @@ def get_metrics(file_id: int, current_user: User = Depends(get_current_user), db
         return {"file_id": file_id, "model_metrics": result.model_metrics, "prediction_days": result.prediction_days}
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
+
+
+@router.get("/predict/{file_id}/chart")
+def get_prediction_chart(file_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Only the Chart.js payload: 60 days of history + the 30-day forecast."""
+    try:
+        analytics, prediction = _get_prediction_services(file_id, current_user.id, db)
+        result = prediction.get_or_create_prediction(file_id=file_id, analytics=analytics, user_id=current_user.id)
+        return {"file_id": file_id, "chart_data": result.chart_data}
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))

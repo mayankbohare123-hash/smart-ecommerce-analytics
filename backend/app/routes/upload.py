@@ -14,17 +14,20 @@ from app.utils.validators import validate_required_columns, validate_dataframe, 
 
 router = APIRouter()
 
-PLAN_LIMITS = {"free": 1, "starter": 5, "pro": 999}
-
 def _check_upload_limit(user: User, db: Session):
+    from fastapi import HTTPException
     from app.database import UploadedFile
+    from app import plans
+
+    limit = plans.upload_limit(user.plan)
+    if limit is None:          # unlimited (Pro)
+        return
     count = db.query(UploadedFile).filter(UploadedFile.user_id == user.id).count()
-    limit = PLAN_LIMITS.get(user.plan, 1)
     if count >= limit:
-        from fastapi import HTTPException
         raise HTTPException(
             status_code=403,
-            detail=f"Upload limit reached for your {user.plan.title()} plan ({limit} dataset{'s' if limit != 1 else ''}). Upgrade to upload more."
+            detail=(f"Upload limit reached for your {plans.PLANS[plans.normalize_plan(user.plan)]['name']} plan "
+                    f"({limit} dataset{'s' if limit != 1 else ''}). Upgrade to upload more."),
         )
 
 

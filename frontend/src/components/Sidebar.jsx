@@ -7,11 +7,11 @@
  *  - Plan badge: FREE (gray) / STARTER (blue) / PRO (gold)
  */
 
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, Link, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Upload, BarChart3, TrendingUp,
   ChevronDown, Database, Circle, Zap, Github, LogOut,
-  Crown, User,
+  Crown, User, CreditCard, ShieldCheck,
 } from 'lucide-react'
 import { useData }  from '../context/DataContext'
 import { useAuth }  from '../context/AuthContext'
@@ -32,6 +32,7 @@ const NAV = [
   { to: '/upload',      icon: Upload,          label: 'Upload Data' },
   { to: '/analytics',   icon: BarChart3,        label: 'Analytics'  },
   { to: '/predictions', icon: TrendingUp,       label: 'Predictions'},
+  { to: '/billing',     icon: CreditCard,       label: 'Billing'    },
 ]
 
 // Plan badge styles
@@ -165,6 +166,9 @@ export default function Sidebar() {
               <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>
                 {user.name || user.email}
               </p>
+              {user.organization && (
+                <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{user.organization}</p>
+              )}
               <span className="inline-block text-xs font-semibold px-1.5 py-0.5 rounded mt-0.5"
                 style={{ background: badge.bg, color: badge.color, fontSize: '9px', letterSpacing: '0.05em' }}>
                 {badge.label}
@@ -181,6 +185,16 @@ export default function Sidebar() {
             </button>
           </div>
 
+          {user.role === 'admin' && (
+            <Link to="/admin" className="flex items-center gap-2 px-2 py-2 mb-2 rounded-lg text-xs font-semibold hover:bg-white/5"
+              style={{ color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)' }}>
+              <ShieldCheck size={14} /> Admin panel
+            </Link>
+          )}
+
+          {/* Live dataset usage vs plan limit + upgrade nudge */}
+          <UsageMeter used={files.length} limit={user.upload_limit} plan={plan} />
+
           {/* Dataset count + GitHub */}
           <div className="flex items-center justify-between px-1 mt-1">
             <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -196,5 +210,30 @@ export default function Sidebar() {
         </div>
       )}
     </aside>
+  )
+}
+
+
+function UsageMeter({ used, limit, plan }) {
+  const unlimited = limit === null || limit === undefined
+  const pct = unlimited ? 0 : Math.min(100, Math.round((used / limit) * 100))
+  const color = pct >= 100 ? '#ef4444' : pct >= 70 ? '#f59e0b' : 'var(--accent)'
+  return (
+    <div className="px-1 mb-2">
+      <div className="flex items-center justify-between text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
+        <span>Datasets</span>
+        <span className="stat-number">{unlimited ? `${used} · Unlimited` : `${used} / ${limit}`}</span>
+      </div>
+      {!unlimited && (
+        <div className="h-1 rounded-full" style={{ background: 'var(--bg-elevated)' }}>
+          <div className="h-1 rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+        </div>
+      )}
+      {plan === 'free' && (
+        <Link to="/pricing" className="block text-xs font-medium mt-2 hover:underline" style={{ color: 'var(--accent)' }}>
+          Upgrade for more datasets →
+        </Link>
+      )}
+    </div>
   )
 }

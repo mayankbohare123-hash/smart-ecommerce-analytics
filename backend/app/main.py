@@ -75,10 +75,12 @@ def create_app() -> FastAPI:
         })
 
     # ── Routers ───────────────────────────────────────────────
-    from app.routes import auth, upload, analytics, visualize, predict
+    from app.routes import auth, upload, analytics, visualize, predict, billing, admin
 
     API_PREFIX = "/api"
     app.include_router(auth.router,      prefix=API_PREFIX, tags=["Authentication"])
+    app.include_router(billing.router,   prefix=API_PREFIX, tags=["Billing"])
+    app.include_router(admin.router,     prefix=API_PREFIX, tags=["Admin"])
     app.include_router(upload.router,    prefix=API_PREFIX, tags=["Upload"])
     app.include_router(analytics.router, prefix=API_PREFIX, tags=["Analytics"])
     app.include_router(visualize.router, prefix=API_PREFIX, tags=["Visualizations"])
